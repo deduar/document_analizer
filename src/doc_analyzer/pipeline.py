@@ -8,6 +8,7 @@ from typing import Any
 
 import yaml
 
+from doc_analyzer.chunk.chunker import chunk_sections
 from doc_analyzer.ingest.pdf_loader import load_pdf_pages
 from doc_analyzer.segment.section_parser import (
     build_sections_related_diagram,
@@ -68,6 +69,12 @@ def load_raw_pages(raw_pages_path: str) -> dict[str, Any]:
     return payload
 
 
+def load_sections(sections_path: str) -> dict[str, Any]:
+    with open(sections_path, "r", encoding="utf-8") as handle:
+        payload = json.load(handle)
+    return payload
+
+
 def run(
     input_path: str | None,
     out_dir: str,
@@ -75,13 +82,16 @@ def run(
     raw_pages_path: str | None = None,
     raw_output_name: str | None = None,
     segment: bool = False,
+    chunk: bool = False,
     sections_output_name: str | None = None,
+    chunks_output_name: str | None = None,
     tree_output_name: str | None = None,
     related_output_name: str | None = None,
     generate_diagrams: bool = True,
     keywords_file: str | None = None,
     update_keywords: bool = False,
     auto_classify_subsections: bool = False,
+    sections_path: str | None = None,
 ) -> dict[str, str]:
     """Run ingest and optional segmentation. Returns generated outputs."""
     config = load_config(config_path)
@@ -90,6 +100,9 @@ def run(
     raw_output_name = raw_output_name or default_raw_name
     sections_output_name = sections_output_name or config.get(
         "sections_output_filename", "sections.json"
+    )
+    chunks_output_name = chunks_output_name or config.get(
+        "chunks_output_filename", "chunks.json"
     )
     tree_output_name = tree_output_name or config.get(
         "sections_tree_filename", "sections_tree.mmd"
@@ -120,6 +133,8 @@ def run(
         )
         outputs["raw_pages"] = raw_path
         raw_payload = load_raw_pages(raw_path)
+
+    sections_list: list[dict[str, Any]] | None = None
 
     if segment:
         pages = raw_payload.get("pages", [])
@@ -160,6 +175,7 @@ def run(
             )
         else:
             sections = segment_sections(pages)
+        sections_list = sections.get("sections", [])
         sections_path = os.path.join(out_dir, sections_output_name)
         _write_json(
             sections_path,
@@ -187,5 +203,29 @@ def run(
             )
             outputs["sections_tree"] = tree_path
             outputs["sections_related"] = related_path
+
+    if chunk:
+        pages = raw_payload.get("pages", [])
+        if sections_list is None:
+            if not sections_path:
+                raise ValueError(
+                    "sections_path is required when chunk is enabled "
+                    "without segment."
+                )
+            sections_payload = load_sections(sections_path)
+            sections_list = sections_payload.get("sections", [])
+        if not isinstance(sections_list, list):
+            raise ValueError("sections payload does not contain a list.")
+        chunks = chunk_sections(pages, sections_list)
+        chunks_path = os.path.join(out_dir, chunks_output_name)
+        _write_json(
+            chunks_path,
+            {
+                "source_file": raw_payload.get("source_file"),
+                "chunk_count": chunks.get("chunk_count", 0),
+                "chunks": chunks.get("chunks", []),
+            },
+        )
+        outputs["chunks"] = chunks_path
 
     return outputs

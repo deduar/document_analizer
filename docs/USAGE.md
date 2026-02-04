@@ -63,6 +63,39 @@ Use the new section query command to retrieve parent/child context:
 
 More examples: `docs/SECTION_QUERY.md`
 
+### Step 3 — Chunking
+
+Purpose: split section content into paragraph/table chunks.
+
+#### Run in container
+
+1. Ensure `out/raw_pages.json` and `out/sections.json` exist (Steps 1-2).
+2. Execute chunking:
+   - `docker exec -it doc-analyzer python -m doc_analyzer --chunk --raw-pages out/raw_pages.json --sections-file out/sections.json --out out`
+   - Optional: override output filename with `--chunks-output-name chunks.json`
+   - Full example (all args):
+     `docker exec -it doc-analyzer python -m doc_analyzer --chunk --raw-pages out/raw_pages.json --sections-file out/sections.json --out out --chunks-output-name chunks.json --config config/config.yaml`
+
+#### Arguments
+
+- `--chunk`: enable step 3 chunking
+- `--raw-pages`: path to `raw_pages.json`
+- `--sections-file`: path to `sections.json`
+- `--out`: output folder (default `out`)
+- `--chunks-output-name`: override output filename (default `chunks.json`)
+
+#### Output
+
+- Default output folder: `out`
+- Default output file: `chunks.json`
+- Result: `out/chunks.json` (overwritten on each run)
+
+#### Notes
+
+- `raw_pages.json` provides the page text used to build chunks.
+- `sections.json` provides section ids/titles and hierarchy used to assign
+  each chunk to the correct section and build `section_path`.
+
 #### Keywords file format
 
 - One entry per line

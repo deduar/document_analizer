@@ -42,9 +42,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run step 2: heuristic section segmentation.",
     )
     parser.add_argument(
+        "--chunk",
+        action="store_true",
+        help="Run step 3: section chunking.",
+    )
+    parser.add_argument(
         "--sections-output-name",
         dest="sections_output_name",
         help="Output filename for sections JSON (step 2).",
+    )
+    parser.add_argument(
+        "--chunks-output-name",
+        dest="chunks_output_name",
+        help="Output filename for chunks JSON (step 3).",
     )
     parser.add_argument(
         "--tree-output-name",
@@ -89,7 +99,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--sections-file",
         dest="sections_file",
-        help="Path to sections.json for section queries.",
+        help="Path to sections.json for queries or chunking.",
     )
     parser.add_argument(
         "--query-exact",
@@ -141,7 +151,10 @@ def main(argv: list[str] | None = None) -> int:
         sections = payload.get("sections", [])
         if not isinstance(sections, list):
             parser.error("sections.json does not contain a 'sections' list.")
-        raw_pages_path = args.raw_pages or os.path.join(args.out, default_raw_name)
+        raw_pages_path = args.raw_pages or os.path.join(
+            args.out,
+            default_raw_name,
+        )
         pages = None
         if os.path.exists(raw_pages_path):
             with open(raw_pages_path, "r", encoding="utf-8") as handle:
@@ -171,9 +184,10 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(contexts, indent=2, ensure_ascii=False))
         return 0
 
-    if not args.input:
+    if not args.input and not args.raw_pages:
         parser.error(
-            "--input/--file is required unless --query or --query-id is used."
+            "--input/--file or --raw-pages is required unless --query "
+            "or --query-id is used."
         )
 
     outputs = run(
@@ -183,13 +197,16 @@ def main(argv: list[str] | None = None) -> int:
         raw_pages_path=args.raw_pages,
         raw_output_name=args.raw_output_name,
         segment=args.segment,
+        chunk=args.chunk,
         sections_output_name=args.sections_output_name,
+        chunks_output_name=args.chunks_output_name,
         tree_output_name=args.tree_output_name,
         related_output_name=args.related_output_name,
         generate_diagrams=not args.no_diagrams,
         keywords_file=args.keywords_file,
         update_keywords=args.update_keywords,
         auto_classify_subsections=args.auto_classify_subsections,
+        sections_path=args.sections_file,
     )
 
     if not outputs:
