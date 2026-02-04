@@ -42,6 +42,19 @@ def build_children_map(
     return children_map
 
 
+def build_chunks_map(
+    chunks: list[dict[str, Any]],
+) -> dict[str, list[dict[str, Any]]]:
+    """Build a section_id -> chunks list map."""
+    chunk_map: dict[str, list[dict[str, Any]]] = {}
+    for chunk in chunks:
+        section_id = chunk.get("section_id")
+        if not isinstance(section_id, str):
+            continue
+        chunk_map.setdefault(section_id, []).append(chunk)
+    return chunk_map
+
+
 def find_sections_by_title(
     sections: list[dict[str, Any]],
     query: str,
@@ -178,10 +191,13 @@ def build_section_context_by_id(
     include_siblings: bool = True,
     pages: list[dict[str, Any]] | None = None,
     max_data_lines: int = 3,
+    chunks: list[dict[str, Any]] | None = None,
+    max_chunks: int = 5,
 ) -> dict[str, Any] | None:
     """Return section context enriched with related sections."""
     section_index = build_section_index(sections)
     children_map = build_children_map(sections)
+    chunk_map = build_chunks_map(chunks or [])
     match = section_index.get(section_id)
     if not match:
         return None
@@ -222,6 +238,8 @@ def build_section_context_by_id(
         context["relations"].append(
             {"kind": "descendant", "sections": descendants}
         )
+    if chunks:
+        context["chunks"] = chunk_map.get(section_id, [])[:max_chunks]
     return context
 
 
@@ -233,10 +251,13 @@ def build_section_context(
     include_children: bool = True,
     pages: list[dict[str, Any]] | None = None,
     max_data_lines: int = 3,
+    chunks: list[dict[str, Any]] | None = None,
+    max_chunks: int = 5,
 ) -> list[dict[str, Any]]:
     """Return section matches with parent/child context."""
     section_index = build_section_index(sections)
     children_map = build_children_map(sections)
+    chunk_map = build_chunks_map(chunks or [])
     matches = find_sections_by_title(sections, query, exact=exact)
     contexts: list[dict[str, Any]] = []
     for match in matches:
@@ -258,5 +279,7 @@ def build_section_context(
                 context["data"] = data_context
         if include_children:
             context["children"] = children_map.get(match_id, [])
+        if chunks:
+            context["chunks"] = chunk_map.get(match_id, [])[:max_chunks]
         contexts.append(context)
     return contexts

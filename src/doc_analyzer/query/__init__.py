@@ -2,6 +2,7 @@
 
 from .sections_query import (
     build_children_map,
+    build_chunks_map,
     build_section_data_context,
     build_section_index,
     build_section_context,
@@ -12,6 +13,7 @@ from .sections_query import (
 
 __all__ = [
     "build_children_map",
+    "build_chunks_map",
     "build_section_data_context",
     "build_section_index",
     "build_section_context",

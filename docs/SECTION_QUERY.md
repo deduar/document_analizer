@@ -35,9 +35,13 @@ Optional flags:
 
 - `--query-exact` for exact title matches
 - `--query-no-children` to omit children from the response
+- `--query-no-chunks` to omit chunk enrichment
+- `--query-max-chunks` to limit chunks per section
 
 If `out/raw_pages.json` is present (or you pass `--raw-pages`), the query
 response will include a `data` block with lines extracted from the PDF page.
+If `out/chunks.json` is present (or you pass `--chunks-file`), the query
+response will include a `chunks` list for each match.
 
 ### Query by section id (CLI)
 
@@ -50,9 +54,13 @@ Optional flags:
 - `--query-descendants` to include all descendants
 - `--query-no-siblings` to omit siblings
 - `--query-no-children` to omit children
+- `--query-no-chunks` to omit chunk enrichment
+- `--query-max-chunks` to limit chunks per section
 
 If `out/raw_pages.json` is present (or you pass `--raw-pages`), the query
 response will include a `data` block with lines extracted from the PDF page.
+If `out/chunks.json` is present (or you pass `--chunks-file`), the query
+response will include a `chunks` list for each match.
 
 ### Relation kinds
 
@@ -73,13 +81,15 @@ All helpers live in `doc_analyzer.query.sections_query`:
   - Builds `{section_id: section}` lookup.
 - `build_children_map(sections)`
   - Builds `{parent_id: [children...]}` lookup.
+- `build_chunks_map(chunks)`
+  - Builds `{section_id: [chunks...]}` lookup.
 - `find_sections_by_title(sections, query, exact=False)`
   - Case-insensitive substring or exact match by title.
 - `get_parent_chain(section_id, section_index)`
   - Returns ancestor chain (root -> parent).
-- `build_section_context(sections, query, exact=False, include_children=True)`
-  - Returns list of `{match, parents, children}` for each match.
-- `build_section_context_by_id(sections, section_id, include_children=True, include_descendants=False, include_siblings=True)`
+- `build_section_context(sections, query, exact=False, include_children=True, pages=None, max_data_lines=3, chunks=None, max_chunks=5)`
+  - Returns list of `{match, parents, children, data, chunks}` for each match.
+- `build_section_context_by_id(sections, section_id, include_children=True, include_descendants=False, include_siblings=True, pages=None, max_data_lines=3, chunks=None, max_chunks=5)`
   - Returns `{match, relations}` for the given section.
   - `relations` is a list of `{kind, sections}` where `kind` is:
     - `parent`, `child`, `sibling`, `descendant`
@@ -108,6 +118,9 @@ Example id query output:
     "page_number": 2,
     "lines": ["1,455,341 1,451,459 0.24% 0.61%", "41.9% 41.9% 26.7% 23.5%"]
   },
+  "chunks": [
+    {"id": "chunk_012", "kind": "table", "text": "1,455,341 ...", "line_count": 3}
+  ],
   "relations": [
     {"kind": "parent", "sections": [{"id": "sec_003", "title": "MÉTRICAS GENERALES"}]},
     {"kind": "child", "sections": [{"id": "sec_005", "title": "1,455,341 ..."}]},

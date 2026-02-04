@@ -102,6 +102,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to sections.json for queries or chunking.",
     )
     parser.add_argument(
+        "--chunks-file",
+        dest="chunks_file",
+        help="Path to chunks.json for query enrichment.",
+    )
+    parser.add_argument(
         "--query-exact",
         action="store_true",
         help="Match section titles exactly (case-insensitive).",
@@ -110,6 +115,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--query-no-children",
         action="store_true",
         help="Skip children in query output.",
+    )
+    parser.add_argument(
+        "--query-no-chunks",
+        action="store_true",
+        help="Skip chunk enrichment in query output.",
+    )
+    parser.add_argument(
+        "--query-max-chunks",
+        type=int,
+        default=5,
+        help="Max chunks to return per section in query output.",
     )
     parser.add_argument(
         "--query-descendants",
@@ -163,6 +179,18 @@ def main(argv: list[str] | None = None) -> int:
             if not isinstance(pages, list):
                 pages = None
 
+        chunks = None
+        chunks_path = args.chunks_file or os.path.join(
+            args.out,
+            config.get("chunks_output_filename", "chunks.json"),
+        )
+        if os.path.exists(chunks_path):
+            with open(chunks_path, "r", encoding="utf-8") as handle:
+                chunks_payload = json.load(handle)
+            chunks = chunks_payload.get("chunks")
+            if not isinstance(chunks, list):
+                chunks = None
+
         if args.query_id:
             context = build_section_context_by_id(
                 sections,
@@ -171,6 +199,8 @@ def main(argv: list[str] | None = None) -> int:
                 include_descendants=args.query_descendants,
                 include_siblings=not args.query_no_siblings,
                 pages=pages,
+                chunks=None if args.query_no_chunks else chunks,
+                max_chunks=args.query_max_chunks,
             )
             print(json.dumps(context, indent=2, ensure_ascii=False))
         else:
@@ -180,6 +210,8 @@ def main(argv: list[str] | None = None) -> int:
                 exact=args.query_exact,
                 include_children=not args.query_no_children,
                 pages=pages,
+                chunks=None if args.query_no_chunks else chunks,
+                max_chunks=args.query_max_chunks,
             )
             print(json.dumps(contexts, indent=2, ensure_ascii=False))
         return 0
