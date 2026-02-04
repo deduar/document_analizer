@@ -81,6 +81,7 @@ def run(
     generate_diagrams: bool = True,
     keywords_file: str | None = None,
     update_keywords: bool = False,
+    auto_classify_subsections: bool = False,
 ) -> dict[str, str]:
     """Run ingest and optional segmentation. Returns generated outputs."""
     config = load_config(config_path)
@@ -97,6 +98,10 @@ def run(
         "sections_related_filename", "sections_related.mmd"
     )
     keywords_file = keywords_file or config.get("keywords_file")
+    auto_classify_subsections = bool(
+        auto_classify_subsections
+        or config.get("auto_classify_subsections", False)
+    )
 
     outputs: dict[str, str] = {}
 
@@ -137,6 +142,7 @@ def run(
                 ) = update_keywords_file(
                     keywords_file,
                     main_candidates=candidates,
+                    auto_classify_subsections=auto_classify_subsections,
                 )
             else:
                 (

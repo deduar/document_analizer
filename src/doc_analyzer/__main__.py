@@ -62,6 +62,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Append discovered headings to the keywords file.",
     )
     parser.add_argument(
+        "--auto-classify-subsections",
+        action="store_true",
+        help="Auto-classify subsections when updating keywords.",
+    )
+    parser.add_argument(
         "--no-diagrams",
         action="store_true",
         help="Skip diagram generation for step 2.",
@@ -92,6 +97,7 @@ def main(argv: list[str] | None = None) -> int:
         generate_diagrams=not args.no_diagrams,
         keywords_file=args.keywords_file,
         update_keywords=args.update_keywords,
+        auto_classify_subsections=args.auto_classify_subsections,
     )
 
     if not outputs:

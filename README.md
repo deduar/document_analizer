@@ -38,11 +38,20 @@ Edit `config/config.yaml`:
 - `sections_related_filename`: output file name (default: `sections_related.mmd`)
 - `keywords_file`: keywords list for headings (default: `config/keywords.txt`)
 - `update_keywords`: append discovered headings to keywords (default: `false`)
+- `auto_classify_subsections`: auto-classify sub headings on update (default: `false`)
 
 Keyword file lines can be plain (main headings), prefixed with `sub:`,
 or use regex via `main_regex:` / `sub_regex:`. When using
 `--update-keywords`, a heading is appended as `sub:` only if it matches
-existing `sub:` or `sub_regex:` rules.
+existing `sub:` / `sub_regex:` rules, unless `--auto-classify-subsections`
+is enabled.
+
+Main vs sub meaning:
+- Main keywords mark top-level sections in the document (e.g., NEWSLETTER).
+- Sub keywords mark nested subsections under the most recent main section
+  (e.g., MÉTRICAS GENERALES under NEWSLETTER).
+- These keywords are not categories; they control nesting and parent/child
+  relations in the tree.
 
 ### Next steps
 

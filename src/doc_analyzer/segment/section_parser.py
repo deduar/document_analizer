@@ -352,6 +352,7 @@ def update_keywords_file(
     path: str,
     main_candidates: Iterable[str],
     subsection_candidates: Iterable[str] | None = None,
+    auto_classify_subsections: bool = False,
 ) -> tuple[list[str], list[str], list[str], list[str]]:
     (
         existing_main,
@@ -365,13 +366,28 @@ def update_keywords_file(
         re.compile(pattern, re.IGNORECASE)
         for pattern in existing_sub_regex
     ]
+    auto_subsection_patterns = [
+        re.compile(pattern, re.IGNORECASE)
+        for pattern in [
+            r"\bMETRICA(S)?\b",
+            r"\bM[ÉE]TRICA(S)?\b",
+            r"\bEVOLUTIVO(S)?\b",
+            r"\bCAMPAÑAS\b",
+            r"\bCAMPANAS\b",
+            r"\bRESULTADO(S)?\b",
+            r"\bRESUMEN\b",
+        ]
+    ]
 
     new_main = []
     new_sub = []
     for candidate in main_candidates:
         normalized = _normalize(candidate)
         if normalized not in existing_main_norm and normalized not in existing_sub_norm:
-            if _matches_patterns(candidate, subsection_patterns) or any(
+            patterns = subsection_patterns
+            if auto_classify_subsections:
+                patterns = subsection_patterns + auto_subsection_patterns
+            if _matches_patterns(candidate, patterns) or any(
                 sub in normalized for sub in existing_sub_norm
             ):
                 new_sub.append(candidate)

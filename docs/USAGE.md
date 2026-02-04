@@ -43,8 +43,9 @@ Purpose: detect high-level section headings from the PDF content.
    - Optional: skip diagram generation with `--no-diagrams`
    - Optional: override keywords file with `--keywords-file config/keywords.txt`
    - Optional: append discovered headings with `--update-keywords`
+   - Optional: auto-classify subsections with `--auto-classify-subsections`
    - Full example (all args):
-     `docker exec -it doc-analyzer python -m doc_analyzer --file data/Cine_Yelmo___Reporting_Automation_202601.pdf --raw-pages out/raw_pages.json --segment --out out --sections-output-name sections.json --tree-output-name sections_tree.mmd --related-output-name sections_related.mmd --keywords-file config/keywords.txt --update-keywords --config config/config.yaml`
+     `docker exec -it doc-analyzer python -m doc_analyzer --file data/Cine_Yelmo___Reporting_Automation_202601.pdf --raw-pages out/raw_pages.json --segment --out out --sections-output-name sections.json --tree-output-name sections_tree.mmd --related-output-name sections_related.mmd --keywords-file config/keywords.txt --update-keywords --auto-classify-subsections --config config/config.yaml`
 
 #### Output
 
@@ -63,9 +64,9 @@ Purpose: detect high-level section headings from the PDF content.
 - Lines starting with `main_regex:` or `sub_regex:` are regex patterns
   - Example: `main_regex: ^RESUMEN\\b`
   - Example: `sub_regex: ^M[ÉE]TRICAS\\b`
-- When `--update-keywords` is used, entries are classified as `sub:` only
-  if they match existing `sub:` or `sub_regex:` rules; otherwise they are
-  appended as `main:`.
+- When `--update-keywords` is used, entries are classified as `sub:` only if they
+  match existing `sub:` / `sub_regex:` rules, unless `--auto-classify-subsections`
+  is enabled.
 
 ### Future steps
 

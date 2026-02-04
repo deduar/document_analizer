@@ -5,3 +5,4 @@ sections_tree_filename: sections_tree.mmd
 sections_related_filename: sections_related.mmd
 keywords_file: config/keywords.txt
 update_keywords: false
+auto_classify_subsections: false
