@@ -137,10 +137,10 @@ def segment_sections_with_keywords(
 
     sections = []
     section_id = 0
+    current_parent_id = None
+    current_subsection_id = None
 
     for page in pages:
-        current_parent_id = None
-        current_subsection_id = None
         words = page.get("words") or []
         median_size = _median_font_size(words)
         lines = _group_words_into_lines(words)
@@ -166,6 +166,8 @@ def segment_sections_with_keywords(
                 numeric_like = _is_numeric_like(text)
                 parent_id = None
                 level = 1
+                section_id += 1
+                current_section_id = f"sec_{section_id:03d}"
                 if numeric_like:
                     if current_subsection_id:
                         parent_id = current_subsection_id
@@ -179,14 +181,13 @@ def segment_sections_with_keywords(
                 ):
                     parent_id = current_parent_id
                     level = 2
-                    current_subsection_id = f"sec_{section_id + 1:03d}"
+                    current_subsection_id = current_section_id
                 else:
-                    current_parent_id = f"sec_{section_id + 1:03d}"
+                    current_parent_id = current_section_id
                     current_subsection_id = None
-                section_id += 1
                 sections.append(
                     {
-                        "id": f"sec_{section_id:03d}",
+                        "id": current_section_id,
                         "title": text,
                         "page_number": page.get("page_number"),
                         "level": level,
