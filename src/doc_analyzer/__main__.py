@@ -130,6 +130,7 @@ def main(argv: list[str] | None = None) -> int:
             "sections_output_filename",
             "sections.json",
         )
+        default_raw_name = config.get("raw_output_filename", "raw_pages.json")
         sections_path = args.sections_file or os.path.join(
             args.out, default_sections_name
         )
@@ -140,6 +141,15 @@ def main(argv: list[str] | None = None) -> int:
         sections = payload.get("sections", [])
         if not isinstance(sections, list):
             parser.error("sections.json does not contain a 'sections' list.")
+        raw_pages_path = args.raw_pages or os.path.join(args.out, default_raw_name)
+        pages = None
+        if os.path.exists(raw_pages_path):
+            with open(raw_pages_path, "r", encoding="utf-8") as handle:
+                raw_payload = json.load(handle)
+            pages = raw_payload.get("pages")
+            if not isinstance(pages, list):
+                pages = None
+
         if args.query_id:
             context = build_section_context_by_id(
                 sections,
@@ -147,6 +157,7 @@ def main(argv: list[str] | None = None) -> int:
                 include_children=not args.query_no_children,
                 include_descendants=args.query_descendants,
                 include_siblings=not args.query_no_siblings,
+                pages=pages,
             )
             print(json.dumps(context, indent=2, ensure_ascii=False))
         else:
@@ -155,6 +166,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.query,
                 exact=args.query_exact,
                 include_children=not args.query_no_children,
+                pages=pages,
             )
             print(json.dumps(contexts, indent=2, ensure_ascii=False))
         return 0

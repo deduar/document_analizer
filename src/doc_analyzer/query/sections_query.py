@@ -2,11 +2,22 @@
 
 from __future__ import annotations
 
+import unicodedata
+
 from typing import Any
 
 
 def _normalize_text(value: str) -> str:
     return " ".join(value.lower().split())
+
+
+def _strip_accents(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value)
+    return "".join(ch for ch in normalized if not unicodedata.combining(ch))
+
+
+def _normalize_for_match(value: str) -> str:
+    return _normalize_text(_strip_accents(value))
 
 
 def build_section_index(
@@ -71,6 +82,78 @@ def get_parent_chain(
     return chain
 
 
+def _line_matches_title(line: str, title: str) -> bool:
+    normalized_line = _normalize_for_match(line)
+    normalized_title = _normalize_for_match(title)
+    if not normalized_line or not normalized_title:
+        return False
+    if normalized_title in normalized_line:
+        return True
+    tokens = [token for token in normalized_title.split() if len(token) > 2]
+    if not tokens:
+        return False
+    return all(token in normalized_line for token in tokens)
+
+
+def _is_numeric_data_line(line: str) -> bool:
+    digits = sum(1 for ch in line if ch.isdigit())
+    letters = sum(1 for ch in line if ch.isalpha())
+    if digits < 2:
+        return False
+    if line[:1].isdigit():
+        return True
+    return letters <= max(2, digits // 3)
+
+
+def _extract_data_lines(
+    page_text: str,
+    title: str,
+    max_lines: int,
+) -> list[str]:
+    lines = [line.strip() for line in page_text.splitlines() if line.strip()]
+    for idx, line in enumerate(lines):
+        if not _line_matches_title(line, title):
+            continue
+        data_lines: list[str] = []
+        for candidate in lines[idx + 1 :]:
+            if _is_numeric_data_line(candidate):
+                data_lines.append(candidate)
+                if len(data_lines) >= max_lines:
+                    break
+            elif data_lines:
+                break
+        return data_lines
+    return []
+
+
+def build_section_data_context(
+    section: dict[str, Any],
+    pages: list[dict[str, Any]],
+    *,
+    max_lines: int = 3,
+) -> dict[str, Any] | None:
+    page_number = section.get("page_number")
+    title = section.get("title")
+    if not isinstance(page_number, int) or not isinstance(title, str):
+        return None
+    page = next(
+        (item for item in pages if item.get("page_number") == page_number),
+        None,
+    )
+    if not page:
+        return None
+    page_text = page.get("text")
+    if not isinstance(page_text, str) or not page_text.strip():
+        return None
+    data_lines = _extract_data_lines(page_text, title, max_lines)
+    if not data_lines:
+        return None
+    return {
+        "page_number": page_number,
+        "lines": data_lines,
+    }
+
+
 def _collect_descendants(
     section_id: str,
     children_map: dict[str | None, list[dict[str, Any]]],
@@ -93,6 +176,8 @@ def build_section_context_by_id(
     include_children: bool = True,
     include_descendants: bool = False,
     include_siblings: bool = True,
+    pages: list[dict[str, Any]] | None = None,
+    max_data_lines: int = 3,
 ) -> dict[str, Any] | None:
     """Return section context enriched with related sections."""
     section_index = build_section_index(sections)
@@ -115,6 +200,14 @@ def build_section_context_by_id(
             {"kind": "parent", "sections": parents},
         ],
     }
+    if pages:
+        data_context = build_section_data_context(
+            match,
+            pages,
+            max_lines=max_data_lines,
+        )
+        if data_context:
+            context["data"] = data_context
     if include_children:
         children = children_map.get(section_id, [])
         context["relations"].append(
@@ -138,6 +231,8 @@ def build_section_context(
     *,
     exact: bool = False,
     include_children: bool = True,
+    pages: list[dict[str, Any]] | None = None,
+    max_data_lines: int = 3,
 ) -> list[dict[str, Any]]:
     """Return section matches with parent/child context."""
     section_index = build_section_index(sections)
@@ -153,6 +248,14 @@ def build_section_context(
             "match": match,
             "parents": parents,
         }
+        if pages:
+            data_context = build_section_data_context(
+                match,
+                pages,
+                max_lines=max_data_lines,
+            )
+            if data_context:
+                context["data"] = data_context
         if include_children:
             context["children"] = children_map.get(match_id, [])
         contexts.append(context)

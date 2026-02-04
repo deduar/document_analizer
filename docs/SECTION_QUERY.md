@@ -36,6 +36,9 @@ Optional flags:
 - `--query-exact` for exact title matches
 - `--query-no-children` to omit children from the response
 
+If `out/raw_pages.json` is present (or you pass `--raw-pages`), the query
+response will include a `data` block with lines extracted from the PDF page.
+
 ### Query by section id (CLI)
 
 ```bash
@@ -47,6 +50,9 @@ Optional flags:
 - `--query-descendants` to include all descendants
 - `--query-no-siblings` to omit siblings
 - `--query-no-children` to omit children
+
+If `out/raw_pages.json` is present (or you pass `--raw-pages`), the query
+response will include a `data` block with lines extracted from the PDF page.
 
 ### Helper functions
 
@@ -87,6 +93,10 @@ Example id query output:
 ```json
 {
   "match": {"id": "sec_004", "title": "Enviados Entregados % rebotes % bajas"},
+  "data": {
+    "page_number": 2,
+    "lines": ["1,455,341 1,451,459 0.24% 0.61%", "41.9% 41.9% 26.7% 23.5%"]
+  },
   "relations": [
     {"kind": "parent", "sections": [{"id": "sec_003", "title": "MÉTRICAS GENERALES"}]},
     {"kind": "child", "sections": [{"id": "sec_005", "title": "1,455,341 ..."}]},
