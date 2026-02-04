@@ -63,6 +63,9 @@ Purpose: detect high-level section headings from the PDF content.
 - Lines starting with `main_regex:` or `sub_regex:` are regex patterns
   - Example: `main_regex: ^RESUMEN\\b`
   - Example: `sub_regex: ^M[ÉE]TRICAS\\b`
+- When `--update-keywords` is used, entries are classified as `sub:` only
+  if they match existing `sub:` or `sub_regex:` rules; otherwise they are
+  appended as `main:`.
 
 ### Future steps
 

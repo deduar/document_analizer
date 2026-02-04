@@ -40,7 +40,9 @@ Edit `config/config.yaml`:
 - `update_keywords`: append discovered headings to keywords (default: `false`)
 
 Keyword file lines can be plain (main headings), prefixed with `sub:`,
-or use regex via `main_regex:` / `sub_regex:`.
+or use regex via `main_regex:` / `sub_regex:`. When using
+`--update-keywords`, a heading is appended as `sub:` only if it matches
+existing `sub:` or `sub_regex:` rules.
 
 ### Next steps
 

@@ -361,15 +361,25 @@ def update_keywords_file(
     ) = load_keywords_file(path)
     existing_main_norm = {_normalize(word) for word in existing_main}
     existing_sub_norm = {_normalize(word) for word in existing_sub}
+    subsection_patterns = [
+        re.compile(pattern, re.IGNORECASE)
+        for pattern in existing_sub_regex
+    ]
 
     new_main = []
+    new_sub = []
     for candidate in main_candidates:
         normalized = _normalize(candidate)
         if normalized not in existing_main_norm and normalized not in existing_sub_norm:
-            new_main.append(candidate)
-            existing_main_norm.add(normalized)
+            if _matches_patterns(candidate, subsection_patterns) or any(
+                sub in normalized for sub in existing_sub_norm
+            ):
+                new_sub.append(candidate)
+                existing_sub_norm.add(normalized)
+            else:
+                new_main.append(candidate)
+                existing_main_norm.add(normalized)
 
-    new_sub = []
     if subsection_candidates:
         for candidate in subsection_candidates:
             normalized = _normalize(candidate)
