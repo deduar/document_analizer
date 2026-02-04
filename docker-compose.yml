@@ -1,0 +1,21 @@
+services:
+  doc-analyzer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: doc-analyzer
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - ./data:/app/data:ro
+      - ./out:/app/out
+      - ./config.yaml:/app/config.yaml:ro
+    networks:
+      - doc_analyzer_net
+    command:
+      - tail
+      - -f
+      - /dev/null
+
+networks:
+  doc_analyzer_net:
+    driver: bridge

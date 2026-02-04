@@ -1,0 +1,2 @@
+extract_words: true
+raw_output_filename: raw_pages.json
