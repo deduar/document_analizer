@@ -54,6 +54,17 @@ Optional flags:
 If `out/raw_pages.json` is present (or you pass `--raw-pages`), the query
 response will include a `data` block with lines extracted from the PDF page.
 
+### Relation kinds
+
+The `relations` list in id queries uses these kinds:
+
+- `parent`: ancestors from root to direct parent
+- `child`: direct children of the match
+- `sibling`: sections that share the same parent as the match
+- `descendant`: all nested children of the match
+
+Example: if `sec_004` and `sec_005` both have parent `sec_003`, they are siblings.
+
 ### Helper functions
 
 All helpers live in `doc_analyzer.query.sections_query`:
