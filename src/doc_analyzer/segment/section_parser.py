@@ -21,6 +21,7 @@ def _is_heading_candidate(
     median_size: float,
     size: float | None,
     keyword_set: set[str],
+    keyword_patterns: list[re.Pattern[str]],
 ) -> bool:
     if not text:
         return False
@@ -29,6 +30,8 @@ def _is_heading_candidate(
         return False
     normalized = _normalize(clean)
     if normalized in keyword_set:
+        return True
+    if _matches_patterns(clean, keyword_patterns):
         return True
     if clean.isupper() and len(clean) <= 120:
         return True
@@ -43,6 +46,10 @@ def _is_numeric_like(text: str) -> bool:
     letters = sum(1 for ch in text if ch.isalpha())
     digits = sum(1 for ch in text if ch.isdigit())
     return digits >= 1 and letters <= 2
+
+
+def _matches_patterns(text: str, patterns: list[re.Pattern[str]]) -> bool:
+    return any(pattern.search(text) for pattern in patterns)
 
 
 def _group_words_into_lines(words: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -102,6 +109,8 @@ def segment_sections_with_keywords(
     pages: list[dict[str, Any]],
     main_keywords: Iterable[str] | None = None,
     subsection_keywords: Iterable[str] | None = None,
+    main_regex: Iterable[str] | None = None,
+    subsection_regex: Iterable[str] | None = None,
 ) -> dict[str, Any]:
     if main_keywords:
         main_keyword_set = {_normalize(word) for word in main_keywords}
@@ -114,7 +123,17 @@ def segment_sections_with_keywords(
     else:
         subsection_keyword_set = set()
 
+    main_regex_patterns = [
+        re.compile(pattern, re.IGNORECASE)
+        for pattern in (main_regex or [])
+    ]
+    subsection_regex_patterns = [
+        re.compile(pattern, re.IGNORECASE)
+        for pattern in (subsection_regex or [])
+    ]
+
     keyword_set = main_keyword_set | subsection_keyword_set
+    keyword_patterns = main_regex_patterns + subsection_regex_patterns
 
     sections = []
     section_id = 0
@@ -141,6 +160,7 @@ def segment_sections_with_keywords(
                 median_size,
                 line.get("avg_size"),
                 keyword_set,
+                keyword_patterns,
             ):
                 normalized = _normalize(text)
                 numeric_like = _is_numeric_like(text)
@@ -153,7 +173,10 @@ def segment_sections_with_keywords(
                     elif current_parent_id:
                         parent_id = current_parent_id
                         level = 2
-                elif normalized in subsection_keyword_set:
+                elif normalized in subsection_keyword_set or _matches_patterns(
+                    text,
+                    subsection_regex_patterns,
+                ):
                     parent_id = current_parent_id
                     level = 2
                     current_subsection_id = f"sec_{section_id + 1:03d}"
@@ -250,9 +273,13 @@ def build_sections_related_diagram(
     return "```mermaid\n" + "\n".join(lines) + "\n```\n"
 
 
-def load_keywords_file(path: str) -> tuple[list[str], list[str]]:
+def load_keywords_file(
+    path: str,
+) -> tuple[list[str], list[str], list[str], list[str]]:
     main_keywords: list[str] = []
     subsection_keywords: list[str] = []
+    main_regex: list[str] = []
+    subsection_regex: list[str] = []
 
     with open(path, "r", encoding="utf-8") as handle:
         for raw_line in handle:
@@ -260,6 +287,21 @@ def load_keywords_file(path: str) -> tuple[list[str], list[str]]:
             if not line or line.startswith("#"):
                 continue
             lower = line.lower()
+            if lower.startswith("main_regex:") or lower.startswith("main-regex:"):
+                value = line.split(":", 1)[1].strip()
+                if value:
+                    main_regex.append(value)
+                continue
+            if lower.startswith("sub_regex:") or lower.startswith("sub-regex:"):
+                value = line.split(":", 1)[1].strip()
+                if value:
+                    subsection_regex.append(value)
+                continue
+            if lower.startswith("regex:"):
+                value = line.split(":", 1)[1].strip()
+                if value:
+                    main_regex.append(value)
+                continue
             if lower.startswith("sub:") or lower.startswith("subsection:"):
                 value = line.split(":", 1)[1].strip()
                 if value:
@@ -272,12 +314,13 @@ def load_keywords_file(path: str) -> tuple[list[str], list[str]]:
                 continue
             main_keywords.append(line)
 
-    return main_keywords, subsection_keywords
+    return main_keywords, subsection_keywords, main_regex, subsection_regex
 
 
 def discover_heading_candidates(
     pages: list[dict[str, Any]],
     keyword_set: set[str] | None = None,
+    keyword_patterns: list[re.Pattern[str]] | None = None,
 ) -> list[str]:
     candidates: list[str] = []
     for page in pages:
@@ -299,6 +342,7 @@ def discover_heading_candidates(
                 median_size,
                 line.get("avg_size"),
                 keyword_set or set(),
+                keyword_patterns or [],
             ):
                 candidates.append(text)
     return candidates
@@ -308,8 +352,13 @@ def update_keywords_file(
     path: str,
     main_candidates: Iterable[str],
     subsection_candidates: Iterable[str] | None = None,
-) -> tuple[list[str], list[str]]:
-    existing_main, existing_sub = load_keywords_file(path)
+) -> tuple[list[str], list[str], list[str], list[str]]:
+    (
+        existing_main,
+        existing_sub,
+        existing_main_regex,
+        existing_sub_regex,
+    ) = load_keywords_file(path)
     existing_main_norm = {_normalize(word) for word in existing_main}
     existing_sub_norm = {_normalize(word) for word in existing_sub}
 
@@ -336,5 +385,15 @@ def update_keywords_file(
             for value in sorted(new_sub, key=str.lower):
                 handle.write(f"sub: {value}\n")
 
-    updated_main, updated_sub = load_keywords_file(path)
-    return updated_main, updated_sub
+    (
+        updated_main,
+        updated_sub,
+        updated_main_regex,
+        updated_sub_regex,
+    ) = load_keywords_file(path)
+    return (
+        updated_main,
+        updated_sub,
+        updated_main_regex,
+        updated_sub_regex,
+    )

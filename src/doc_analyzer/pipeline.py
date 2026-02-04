@@ -129,18 +129,28 @@ def run(
                 )
             if update_keywords:
                 candidates = discover_heading_candidates(pages)
-                main_keywords, subsection_keywords = update_keywords_file(
+                (
+                    main_keywords,
+                    subsection_keywords,
+                    main_regex,
+                    subsection_regex,
+                ) = update_keywords_file(
                     keywords_file,
                     main_candidates=candidates,
                 )
             else:
-                main_keywords, subsection_keywords = load_keywords_file(
-                    keywords_file
-                )
+                (
+                    main_keywords,
+                    subsection_keywords,
+                    main_regex,
+                    subsection_regex,
+                ) = load_keywords_file(keywords_file)
             sections = segment_sections_with_keywords(
                 pages,
                 main_keywords=main_keywords,
                 subsection_keywords=subsection_keywords,
+                main_regex=main_regex,
+                subsection_regex=subsection_regex,
             )
         else:
             sections = segment_sections(pages)

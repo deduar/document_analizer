@@ -39,7 +39,8 @@ Edit `config/config.yaml`:
 - `keywords_file`: keywords list for headings (default: `config/keywords.txt`)
 - `update_keywords`: append discovered headings to keywords (default: `false`)
 
-Keyword file lines can be plain (main headings) or prefixed with `sub:`.
+Keyword file lines can be plain (main headings), prefixed with `sub:`,
+or use regex via `main_regex:` / `sub_regex:`.
 
 ### Next steps
 
