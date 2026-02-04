@@ -3,8 +3,14 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
-from doc_analyzer.pipeline import run
+
+from doc_analyzer.pipeline import load_config, run
+from doc_analyzer.query.sections_query import (
+    build_section_context,
+    build_section_context_by_id,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -12,7 +18,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--input",
         "--file",
-        required=True,
         dest="input",
         help="Path to input document (PDF for step 1).",
     )
@@ -72,6 +77,41 @@ def build_parser() -> argparse.ArgumentParser:
         help="Skip diagram generation for step 2.",
     )
     parser.add_argument(
+        "--query",
+        dest="query",
+        help="Query section titles and return context as JSON.",
+    )
+    parser.add_argument(
+        "--query-id",
+        dest="query_id",
+        help="Query section by id and return related context as JSON.",
+    )
+    parser.add_argument(
+        "--sections-file",
+        dest="sections_file",
+        help="Path to sections.json for section queries.",
+    )
+    parser.add_argument(
+        "--query-exact",
+        action="store_true",
+        help="Match section titles exactly (case-insensitive).",
+    )
+    parser.add_argument(
+        "--query-no-children",
+        action="store_true",
+        help="Skip children in query output.",
+    )
+    parser.add_argument(
+        "--query-descendants",
+        action="store_true",
+        help="Include descendants in id query output.",
+    )
+    parser.add_argument(
+        "--query-no-siblings",
+        action="store_true",
+        help="Skip siblings in id query output.",
+    )
+    parser.add_argument(
         "--config",
         default="config/config.yaml",
         help="Path to YAML config file.",
@@ -84,6 +124,46 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     config_path = args.config if os.path.exists(args.config) else None
+    if args.query or args.query_id:
+        config = load_config(config_path)
+        default_sections_name = config.get(
+            "sections_output_filename",
+            "sections.json",
+        )
+        sections_path = args.sections_file or os.path.join(
+            args.out, default_sections_name
+        )
+        if not os.path.exists(sections_path):
+            parser.error(f"sections file not found: {sections_path}")
+        with open(sections_path, "r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+        sections = payload.get("sections", [])
+        if not isinstance(sections, list):
+            parser.error("sections.json does not contain a 'sections' list.")
+        if args.query_id:
+            context = build_section_context_by_id(
+                sections,
+                args.query_id,
+                include_children=not args.query_no_children,
+                include_descendants=args.query_descendants,
+                include_siblings=not args.query_no_siblings,
+            )
+            print(json.dumps(context, indent=2, ensure_ascii=False))
+        else:
+            contexts = build_section_context(
+                sections,
+                args.query,
+                exact=args.query_exact,
+                include_children=not args.query_no_children,
+            )
+            print(json.dumps(contexts, indent=2, ensure_ascii=False))
+        return 0
+
+    if not args.input:
+        parser.error(
+            "--input/--file is required unless --query or --query-id is used."
+        )
+
     outputs = run(
         input_path=args.input,
         out_dir=args.out,

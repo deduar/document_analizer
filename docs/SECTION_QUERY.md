@@ -1,0 +1,101 @@
+## Section Query Guide
+
+This guide shows how to use the lightweight query helpers to retrieve
+section context (parents/children) from `sections.json`.
+
+### Quick start (Python)
+
+```python
+import json
+
+from doc_analyzer.query.sections_query import build_section_context
+
+
+with open("out/sections.json", "r", encoding="utf-8") as handle:
+    payload = json.load(handle)
+
+sections = payload.get("sections", [])
+
+# Find matches that contain "Enviados" in the title.
+contexts = build_section_context(sections, "Enviados")
+
+for context in contexts:
+    parents = " > ".join(parent.get("title", "") for parent in context["parents"])
+    title = context["match"].get("title")
+    print(f"{parents} > {title}".strip(" >"))
+```
+
+### Quick start (CLI)
+
+```bash
+python -m doc_analyzer --query "Enviados" --sections-file out/sections.json
+```
+
+Optional flags:
+
+- `--query-exact` for exact title matches
+- `--query-no-children` to omit children from the response
+
+### Query by section id (CLI)
+
+```bash
+python -m doc_analyzer --query-id sec_004 --sections-file out/sections.json
+```
+
+Optional flags:
+
+- `--query-descendants` to include all descendants
+- `--query-no-siblings` to omit siblings
+- `--query-no-children` to omit children
+
+### Helper functions
+
+All helpers live in `doc_analyzer.query.sections_query`:
+
+- `build_section_index(sections)`
+  - Builds `{section_id: section}` lookup.
+- `build_children_map(sections)`
+  - Builds `{parent_id: [children...]}` lookup.
+- `find_sections_by_title(sections, query, exact=False)`
+  - Case-insensitive substring or exact match by title.
+- `get_parent_chain(section_id, section_index)`
+  - Returns ancestor chain (root -> parent).
+- `build_section_context(sections, query, exact=False, include_children=True)`
+  - Returns list of `{match, parents, children}` for each match.
+- `build_section_context_by_id(sections, section_id, include_children=True, include_descendants=False, include_siblings=True)`
+  - Returns `{match, relations}` for the given section.
+  - `relations` is a list of `{kind, sections}` where `kind` is:
+    - `parent`, `child`, `sibling`, `descendant`
+
+### Example output shape
+
+```json
+[
+  {
+    "match": {"id": "sec_042", "title": "Enviados", "...": "..."},
+    "parents": [
+      {"id": "sec_010", "title": "Newsletter"},
+      {"id": "sec_021", "title": "Metricas generales"}
+    ],
+    "children": []
+  }
+]
+```
+
+Example id query output:
+
+```json
+{
+  "match": {"id": "sec_004", "title": "Enviados Entregados % rebotes % bajas"},
+  "relations": [
+    {"kind": "parent", "sections": [{"id": "sec_003", "title": "MÉTRICAS GENERALES"}]},
+    {"kind": "child", "sections": [{"id": "sec_005", "title": "1,455,341 ..."}]},
+    {"kind": "sibling", "sections": [{"id": "sec_006", "title": "Tasa apertura ..."}]}
+  ]
+}
+```
+
+### Notes
+
+- Results depend on correct `parent_id` relationships in `sections.json`.
+- Use `exact=True` if you want only exact title matches.

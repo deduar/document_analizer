@@ -33,6 +33,8 @@ def _is_heading_candidate(
         return True
     if _matches_patterns(clean, keyword_patterns):
         return True
+    if _looks_like_column_header(clean):
+        return True
     if clean.isupper() and len(clean) <= 120:
         return True
     if size is not None and size >= median_size + 2:
@@ -50,6 +52,21 @@ def _is_numeric_like(text: str) -> bool:
 
 def _matches_patterns(text: str, patterns: list[re.Pattern[str]]) -> bool:
     return any(pattern.search(text) for pattern in patterns)
+
+
+def _looks_like_column_header(text: str) -> bool:
+    if "%" not in text:
+        return False
+    if any(ch.isdigit() for ch in text):
+        return False
+    words = re.findall(r"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+", text)
+    return 2 <= len(words) <= 12
+
+
+def _is_subheading_size(size: float | None, median_size: float) -> bool:
+    if size is None or median_size <= 0:
+        return False
+    return size <= median_size + 0.5
 
 
 def _group_words_into_lines(words: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -139,6 +156,7 @@ def segment_sections_with_keywords(
     section_id = 0
     current_parent_id = None
     current_subsection_id = None
+    current_subsubsection_id = None
 
     for page in pages:
         words = page.get("words") or []
@@ -164,27 +182,45 @@ def segment_sections_with_keywords(
             ):
                 normalized = _normalize(text)
                 numeric_like = _is_numeric_like(text)
+                is_column_header = _looks_like_column_header(text)
                 parent_id = None
                 level = 1
                 section_id += 1
                 current_section_id = f"sec_{section_id:03d}"
                 if numeric_like:
-                    if current_subsection_id:
+                    if current_subsubsection_id:
+                        parent_id = current_subsubsection_id
+                        level = 4
+                    elif current_subsection_id:
                         parent_id = current_subsection_id
                         level = 3
                     elif current_parent_id:
                         parent_id = current_parent_id
                         level = 2
+                elif is_column_header and current_subsection_id:
+                    parent_id = current_subsection_id
+                    level = 3
+                    current_subsubsection_id = current_section_id
                 elif normalized in subsection_keyword_set or _matches_patterns(
                     text,
                     subsection_regex_patterns,
+                ) or (
+                    current_parent_id
+                    and _is_subheading_size(
+                        line.get("avg_size"),
+                        median_size,
+                    )
+                    and normalized not in main_keyword_set
+                    and not _matches_patterns(text, main_regex_patterns)
                 ):
                     parent_id = current_parent_id
                     level = 2
                     current_subsection_id = current_section_id
+                    current_subsubsection_id = None
                 else:
                     current_parent_id = current_section_id
                     current_subsection_id = None
+                    current_subsubsection_id = None
                 sections.append(
                     {
                         "id": current_section_id,

@@ -55,6 +55,14 @@ Purpose: detect high-level section headings from the PDF content.
 - Diagram outputs: `out/sections_tree.mmd`, `out/sections_related.mmd`
 - Keywords file: `config/keywords.txt` (used to detect main/subsection headings)
 
+### Section query (CLI)
+
+Use the new section query command to retrieve parent/child context:
+
+- `python -m doc_analyzer --query "Enviados" --sections-file out/sections.json`
+
+More examples: `docs/SECTION_QUERY.md`
+
 #### Keywords file format
 
 - One entry per line

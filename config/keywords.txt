@@ -1,3 +1,15 @@
 # Lines are case-insensitive.
 # Prefix with "sub:" to mark subsection headings.
 
+
+# Auto-discovered keywords
+main: +QUECINE
+main: AUTOMÁTICAS
+main: CAMPAÑAS
+main: ESTRENOS
+main: EVOLUTIVOS
+main: INFORME DE SEGUIMIENTO MARKETING DIGITAL
+main: MÉTRICAS GENERALES
+main: NEWSLETTER
+main: PREESTRENOS
+main: PROMOS
