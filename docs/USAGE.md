@@ -61,6 +61,8 @@ Purpose: detect high-level section headings from the PDF content.
 - Lines starting with `main:` are main section headings
 - Lines starting with `#` are ignored
 - Lines starting with `main_regex:` or `sub_regex:` are regex patterns
+  - Example: `main_regex: ^RESUMEN\\b`
+  - Example: `sub_regex: ^M[ÉE]TRICAS\\b`
 
 ### Future steps
 
