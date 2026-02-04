@@ -12,7 +12,11 @@ from doc_analyzer.ingest.pdf_loader import load_pdf_pages
 from doc_analyzer.segment.section_parser import (
     build_sections_related_diagram,
     build_sections_tree_diagram,
+    discover_heading_candidates,
+    load_keywords_file,
     segment_sections,
+    segment_sections_with_keywords,
+    update_keywords_file,
 )
 
 
@@ -75,6 +79,8 @@ def run(
     tree_output_name: str | None = None,
     related_output_name: str | None = None,
     generate_diagrams: bool = True,
+    keywords_file: str | None = None,
+    update_keywords: bool = False,
 ) -> dict[str, str]:
     """Run ingest and optional segmentation. Returns generated outputs."""
     config = load_config(config_path)
@@ -90,6 +96,7 @@ def run(
     related_output_name = related_output_name or config.get(
         "sections_related_filename", "sections_related.mmd"
     )
+    keywords_file = keywords_file or config.get("keywords_file")
 
     outputs: dict[str, str] = {}
 
@@ -111,7 +118,32 @@ def run(
 
     if segment:
         pages = raw_payload.get("pages", [])
-        sections = segment_sections(pages)
+        if update_keywords and not keywords_file:
+            raise ValueError(
+                "keywords_file is required when update_keywords is enabled."
+            )
+        if keywords_file:
+            if not os.path.exists(keywords_file):
+                raise FileNotFoundError(
+                    f"keywords_file not found: {keywords_file}"
+                )
+            if update_keywords:
+                candidates = discover_heading_candidates(pages)
+                main_keywords, subsection_keywords = update_keywords_file(
+                    keywords_file,
+                    main_candidates=candidates,
+                )
+            else:
+                main_keywords, subsection_keywords = load_keywords_file(
+                    keywords_file
+                )
+            sections = segment_sections_with_keywords(
+                pages,
+                main_keywords=main_keywords,
+                subsection_keywords=subsection_keywords,
+            )
+        else:
+            sections = segment_sections(pages)
         sections_path = os.path.join(out_dir, sections_output_name)
         _write_json(
             sections_path,

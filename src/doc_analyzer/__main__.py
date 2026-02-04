@@ -52,13 +52,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output filename for related sections diagram (step 2).",
     )
     parser.add_argument(
+        "--keywords-file",
+        dest="keywords_file",
+        help="Path to keywords file for section segmentation.",
+    )
+    parser.add_argument(
+        "--update-keywords",
+        action="store_true",
+        help="Append discovered headings to the keywords file.",
+    )
+    parser.add_argument(
         "--no-diagrams",
         action="store_true",
         help="Skip diagram generation for step 2.",
     )
     parser.add_argument(
         "--config",
-        default="config.yaml",
+        default="config/config.yaml",
         help="Path to YAML config file.",
     )
     return parser
@@ -80,6 +90,8 @@ def main(argv: list[str] | None = None) -> int:
         tree_output_name=args.tree_output_name,
         related_output_name=args.related_output_name,
         generate_diagrams=not args.no_diagrams,
+        keywords_file=args.keywords_file,
+        update_keywords=args.update_keywords,
     )
 
     if not outputs:

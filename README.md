@@ -30,12 +30,16 @@ Steps implemented:
 
 ### Configuration
 
-Edit `config.yaml`:
+Edit `config/config.yaml`:
 - `extract_words`: include word-level metadata (default: `true`)
 - `raw_output_filename`: output file name (default: `raw_pages.json`)
 - `sections_output_filename`: output file name (default: `sections.json`)
 - `sections_tree_filename`: output file name (default: `sections_tree.mmd`)
 - `sections_related_filename`: output file name (default: `sections_related.mmd`)
+- `keywords_file`: keywords list for headings (default: `config/keywords.txt`)
+- `update_keywords`: append discovered headings to keywords (default: `false`)
+
+Keyword file lines can be plain (main headings) or prefixed with `sub:`.
 
 ### Next steps
 

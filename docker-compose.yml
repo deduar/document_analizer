@@ -8,9 +8,9 @@ services:
     volumes:
       - ./src:/app/src
       - ./requirements.txt:/app/requirements.txt:ro
+      - ./config:/app/config
       - ./data:/app/data:ro
       - ./out:/app/out
-      - ./config.yaml:/app/config.yaml:ro
     networks:
       - doc_analyzer_net
     command:

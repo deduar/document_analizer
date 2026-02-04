@@ -1,0 +1,17 @@
+# Lines are case-insensitive.
+# Prefix with "sub:" to mark subsection headings.
+
+main: INTRODUCCION
+main: NEWSLETTER
+main: PROMOS
+main: ESTRENOS
+main: PREESTRENOS
+main: +QUECINE
+main: AUTOMÁTICAS
+main: AUTOMATICAS
+
+sub: MÉTRICAS GENERALES
+sub: METRICAS GENERALES
+sub: EVOLUTIVOS
+sub: CAMPAÑAS
+sub: CAMPANAS

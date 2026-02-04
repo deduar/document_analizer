@@ -12,7 +12,7 @@ COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY src /app/src
-COPY config.yaml /app/config.yaml
+COPY config /app/config
 
 RUN chown -R appuser:appuser /app
 
