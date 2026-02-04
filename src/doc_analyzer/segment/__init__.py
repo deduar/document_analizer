@@ -1,0 +1,1 @@
+"""Section segmentation helpers."""

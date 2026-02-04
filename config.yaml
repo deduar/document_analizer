@@ -1,2 +1,5 @@
 extract_words: true
 raw_output_filename: raw_pages.json
+sections_output_filename: sections.json
+sections_tree_filename: sections_tree.mmd
+sections_related_filename: sections_related.mmd

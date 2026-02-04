@@ -6,15 +6,17 @@ services:
     container_name: doc-analyzer
     user: "${UID:-1000}:${GID:-1000}"
     volumes:
+      - ./src:/app/src
+      - ./requirements.txt:/app/requirements.txt:ro
       - ./data:/app/data:ro
       - ./out:/app/out
       - ./config.yaml:/app/config.yaml:ro
     networks:
       - doc_analyzer_net
     command:
-      - tail
-      - -f
-      - /dev/null
+      - /bin/sh
+      - -c
+      - pip install --no-cache-dir -r /app/requirements.txt && tail -f /dev/null
 
 networks:
   doc_analyzer_net:

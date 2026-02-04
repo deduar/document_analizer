@@ -11,21 +11,49 @@ Purpose: extract page text and basic layout metadata into JSON.
 1. Start container (idle):
    - `docker compose up -d --build`
 2. Execute ingestion:
-   - `docker exec -it doc-analyzer python -m doc_analyzer --file data/Cine_Yelmo___Reporting_Automation_202601.pdf --out out`
+   - `docker exec -it doc-analyzer python -m doc_analyzer --file data/Cine_Yelmo___Reporting_Automation_202601.pdf`
+   - Optional: override output folder with `--out out`
+   - Optional: override output filename with `--raw-output-name raw_pages.json`
+   - Full example (all args):
+     `docker exec -it doc-analyzer python -m doc_analyzer --file data/Cine_Yelmo___Reporting_Automation_202601.pdf --out out --raw-output-name raw_pages.json --config config.yaml`
 
 #### Output
 
-- `out/raw_pages.json` (overwritten on each run)
+- Default output folder: `out`
+- Default output file: `raw_pages.json`
+- Result: `out/raw_pages.json` (overwritten on each run)
 
 #### Notes
 
 - Warnings like `Could not get FontBBox...` are common PDF parsing warnings and
   do not stop the output generation.
 
+### Step 2 — Section segmentation (heuristic)
+
+Purpose: detect high-level section headings from the PDF content.
+
+#### Run in container
+
+1. Ensure `out/raw_pages.json` exists (Step 1).
+2. Execute segmentation:
+   - `docker exec -it doc-analyzer python -m doc_analyzer --file data/Cine_Yelmo___Reporting_Automation_202601.pdf --raw-pages out/raw_pages.json --segment --out out`
+   - Optional: override output folder with `--out out`
+   - Optional: override output filename with `--sections-output-name sections.json`
+   - Optional: override diagram filenames with `--tree-output-name sections_tree.mmd` and `--related-output-name sections_related.mmd`
+   - Optional: skip diagram generation with `--no-diagrams`
+   - Full example (all args):
+     `docker exec -it doc-analyzer python -m doc_analyzer --file data/Cine_Yelmo___Reporting_Automation_202601.pdf --raw-pages out/raw_pages.json --segment --out out --sections-output-name sections.json --tree-output-name sections_tree.mmd --related-output-name sections_related.mmd --config config.yaml`
+
+#### Output
+
+- Default output folder: `out`
+- Default output file: `sections.json`
+- Result: `out/sections.json` (overwritten on each run)
+- Diagram outputs: `out/sections_tree.mmd`, `out/sections_related.mmd`
+
 ### Future steps
 
 Sections will be added here for:
-- Step 2: section segmentation
 - Step 3: chunking
 - Step 4: categorization
 - Step 5: graph relations

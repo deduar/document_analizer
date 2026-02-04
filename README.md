@@ -6,7 +6,9 @@ formats), categorizing them, and building a relationship graph.
 
 ### Current status
 
-Step 1 implemented: PDF ingest → `raw_pages.json`.
+Steps implemented:
+- Step 1: PDF ingest → `raw_pages.json`
+- Step 2: Section segmentation (heuristic) → `sections.json`
 
 ### Requirements
 
@@ -18,16 +20,22 @@ Step 1 implemented: PDF ingest → `raw_pages.json`.
    - `docker compose up -d --build`
 2. Run the analysis inside the container:
    - `docker exec -it doc-analyzer python -m doc_analyzer --file data/Cine_Yelmo___Reporting_Automation_202601.pdf --out out`
+3. Run segmentation (step 2) using the raw pages output:
+   - `docker exec -it doc-analyzer python -m doc_analyzer --file data/Cine_Yelmo___Reporting_Automation_202601.pdf --raw-pages out/raw_pages.json --segment --out out`
 
 ### Outputs
 
 - `out/raw_pages.json` (overwritten each run)
+- `out/sections.json` (overwritten each run)
 
 ### Configuration
 
 Edit `config.yaml`:
 - `extract_words`: include word-level metadata (default: `true`)
 - `raw_output_filename`: output file name (default: `raw_pages.json`)
+- `sections_output_filename`: output file name (default: `sections.json`)
+- `sections_tree_filename`: output file name (default: `sections_tree.mmd`)
+- `sections_related_filename`: output file name (default: `sections_related.mmd`)
 
 ### Next steps
 
